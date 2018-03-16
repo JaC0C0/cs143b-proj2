@@ -8,8 +8,12 @@ Memory::Memory()
     }
 }
 
-int Memory::readPhysical(int s, int p, int w)
+int Memory::readPhysical(int VA)
 {
+    std::tuple<int, int, int> temp = this->convertVA(VA);
+    int s = std::get<0>(temp);
+    int p = std::get<1>(temp);
+    int w = std::get<2>(temp);
     if (s > 511 || p > 1023 || w > 511)
     {
         std::cout << "error, out of bounds" << std::endl;
@@ -52,8 +56,12 @@ int Memory::readPhysical(int s, int p, int w)
     }
 }
 
-int Memory::writePhysical(int s, int p, int w)
+int Memory::writePhysical(int VA)
 {
+    std::tuple<int, int, int> temp = this->convertVA(VA);
+    int s = std::get<0>(temp);
+    int p = std::get<1>(temp);
+    int w = std::get<2>(temp);
     if (s > 511 || p > 1023 || w > 511)
     {
         std::cout << "error, out of bounds" << std::endl;
@@ -93,4 +101,31 @@ int Memory::writePhysical(int s, int p, int w)
             return physicalMem[pageTableNum + p][w];
         }
     }
+}
+
+void Memory::setUseTLB(bool b)
+{
+    this->useTLB = b;
+}
+
+std::tuple<int, int, int> Memory::convertVA(int VA)
+{
+    std::bitset<32> bitAddress(VA);
+    std::string virtualAddress = bitAddress.to_string();
+    std::cout << virtualAddress << std::endl;
+    std::string tempS, tempP, tempW;
+    for (int i = 4; i < 13; i++)
+    {
+        tempS += virtualAddress[i];
+        tempP += virtualAddress[i+9];
+        tempW += virtualAddress[i+19];
+    }
+    tempP += virtualAddress[22];
+    std::cout << tempS << "|" << tempP << "|" << tempW << std::endl;
+    std::bitset<9> s(tempS);
+    std::bitset<10> p(tempP);
+    std::bitset<9> w(tempW);
+
+    return std::make_tuple(int(s.to_ulong()), int(p.to_ulong()), int(w.to_ulong()));
+
 }

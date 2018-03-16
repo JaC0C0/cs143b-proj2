@@ -2,14 +2,19 @@
 #define MEMORY_H
 
 #include <iostream>
+#include <tuple>
+#include <bitset>
 
 class Memory
 {
 public:
     Memory();
-    int readPhysical(int s, int p, int w);
-    int writePhysical(int s, int p, int w);
+    int readPhysical(int VA);
+    int writePhysical(int VA);
+    void setUseTLB(bool b);
+    std::tuple<int, int, int> convertVA(int VA);
 private:
+    bool useTLB = true;
     int physicalMem[1024][512];
     unsigned int bitMap;
     const unsigned int bitIdentityMap[16] = 
