@@ -31,4 +31,5 @@
 *.out
 *.app
 
-a.out
+*.out
+*.gch
