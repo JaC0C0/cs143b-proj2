@@ -4,18 +4,25 @@
 #include <iostream>
 #include <tuple>
 #include <bitset>
+#include <vector>
+#include <iostream>
+#include <string>
 
 class Memory
 {
 public:
     Memory();
+    void initialize(int s, int f);
+    void initialize(int p, int s, int f);
     int readPhysical(int VA);
     int writePhysical(int VA);
     void setUseTLB(bool b);
     std::tuple<int, int, int> convertVA(int VA);
     int getTraceBit(int b);
     bool toggleBitMap(int b);
+    int checkTLB(int VA);
 private:
+    std::vector<std::tuple<int, std::string, int>> TLB;
     bool useTLB = true;
     int physicalMem[1024][512];
     unsigned int bitMap[32];

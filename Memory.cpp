@@ -13,6 +13,26 @@ Memory::Memory()
     {
         this->bitMap[j] = 0;
     }
+    //Initialize TLB
+    // for (int k = 0; k < 4; k++)
+    // {
+    //     this->TLB.push_back(std::make_tuple(-1, 0, 0))
+    // }
+}
+
+//Initializes Memory with given inputs.
+void Memory::initialize(int s, int f)
+{
+    this->physicalMem[0][s] = f;
+}
+
+void Memory::initialize(int p, int s, int f)
+{
+    int index = 1 + (p / 512);
+    int remainder = p % 512;
+    this->physicalMem[0][s] = p;
+    this->physicalMem[index][remainder] = f;
+    this->toggleBitMap(s);
 }
 
 //Read operation to the respective virtual address
@@ -27,12 +47,12 @@ int Memory::readPhysical(int VA)
         std::cout << "error, out of bounds" << std::endl;
         return -1;
     }
-    if (physicalMem[0][s] == -1)
+    if (this->physicalMem[0][s] == -1)
     {
         std::cout << "pf" << std::endl;
         return -1;
     }
-    else if (physicalMem[0][s] == 0)
+    else if (this->physicalMem[0][s] == 0)
     {
         std::cout << "err" << std::endl;
         return 0;
@@ -40,7 +60,7 @@ int Memory::readPhysical(int VA)
     else
     {
         int pOffset = 0;
-        int pageTableNum = physicalMem[0][s];
+        int pageTableNum = this->physicalMem[0][s];
         if (p > 511)
         {
             pageTableNum += 1;
@@ -162,7 +182,6 @@ std::tuple<int, int, int> Memory::convertVA(int VA)
         tempW += virtualAddress[i+19];
     }
     tempP += virtualAddress[22];
-    std::cout << tempS << "|" << tempP << "|" << tempW << std::endl;
     std::bitset<9> s(tempS);
     std::bitset<10> p(tempP);
     std::bitset<9> w(tempW);
@@ -197,4 +216,30 @@ bool Memory::toggleBitMap(int b)
         //Return False if respective frame is occupied
         return false;
     }
+}
+
+int Memory::checkTLB(int VA)
+{
+    std::tuple<int, int, int> temp = convertVA(VA);
+    std::bitset<9> s(std::get<0>(temp));
+    std::bitset<10> p(std::get<1>(temp));
+    std::string page = s.to_string() + p.to_string();
+
+    for (int i = 0; i < this->TLB.size(); i++)
+    {
+        if (std::get<1>(this->TLB[i]) == page)
+        {
+            if (std::get<0>(this->TLB[i]) < 3)
+            {
+                for (int j = std::get<0>(this->TLB[i]); j < 3; j++)
+                {
+                    std::get<0>(this->TLB[j]) -= 1;
+                }
+                std::get<0>(this->TLB[i]) = 3;
+                //TODO: Sort Vector by rank again
+                return std::get<2>(this->TLB[i]);
+            }
+        }
+    }
+    return -2;
 }

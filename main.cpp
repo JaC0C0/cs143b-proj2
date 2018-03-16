@@ -31,29 +31,23 @@ int main()
         //address get<2> 
         else if (std::get<0>(cmd) == -2)
         {
-            //TODO: Create initialize function to establish initial memory state
-            // virtualMemory.initialize();
+            virtualMemory.initialize(std::get<1>(cmd), std::get<2>(cmd));
         }
         //First value as any positive integer implies that page get<0> of segment <get1> starts at 
         //address get<2>
         else
         {
-            //TODO: Create initialize function to establish initial memory state
-            // virtualMemory.initialize();
+            virtualMemory.initialize(std::get<0>(cmd), std::get<1>(cmd), std::get<2>(cmd));
         }
     }
 
-/*
-    std::bitset<32> foo = 1343423;
-    std::string temp = "";
-    for (int i = 0; i < 8; i++)
-    {
-        temp += std::to_string(foo[i]);
-    }
-    std::bitset<32> thebit(temp);
-    std::cout << thebit << std::endl;*/
-    // std::tuple<int, int, int> temp = virtualMemory.convertVA(0);
-    // std::cout << std::get<0>(temp) << " " << std::get<1>(temp) << " " << std::get<2>(temp) << std::endl;
+    std::tuple<int, int, int> temp = virtualMemory.convertVA(1048576);
+    std::tuple<int, int, int> temp1 = virtualMemory.convertVA(1048586);
+    std::tuple<int, int, int> temp2 = virtualMemory.convertVA(1049088);
+
+    std::cout << std::get<0>(temp) << " " << std::get<1>(temp) << " " << std::get<2>(temp) << std::endl;
+    std::cout << std::get<0>(temp1) << " " << std::get<1>(temp1) << " " << std::get<2>(temp1) << std::endl;
+    std::cout << std::get<0>(temp2) << " " << std::get<1>(temp2) << " " << std::get<2>(temp2) << std::endl;
     std::cout << "Holla" << std::endl;
 
 

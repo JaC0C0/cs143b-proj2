@@ -58,7 +58,7 @@ std::vector<std::tuple<int, int, int>> FileScanner::processCmd()
                     for (int i = 0; i < tokens.size(); i += 2)
                     {
                         std::tuple<int, int, int> temp = 
-                        std::make_tuple(-2, std::stoi(tokens[i]), std::stoi(tokens[i+1]));
+                            std::make_tuple(-2, std::stoi(tokens[i]), std::stoi(tokens[i+1]));
                         initVector.push_back(temp);
                     }
                 }
@@ -67,7 +67,7 @@ std::vector<std::tuple<int, int, int>> FileScanner::processCmd()
                     for (int i = 0; i < tokens.size(); i += 3)
                     {
                         std::tuple<int, int, int> temp = 
-                        std::make_tuple(std::stoi(tokens[i]), std::stoi(tokens[i+1]), std::stoi(tokens[i+2]));
+                            std::make_tuple(std::stoi(tokens[i]), std::stoi(tokens[i+1]), std::stoi(tokens[i+2]));
                         initVector.push_back(temp);
                     }
                 }
@@ -81,10 +81,6 @@ std::vector<std::tuple<int, int, int>> FileScanner::processCmd()
                     }
                 }
             }
-        }
-        for (auto initCmd : initVector)
-        {
-            std::cout << std::get<0>(initCmd) << " " << std::get<1>(initCmd) << " " << std::get<2>(initCmd) << std::endl;
         }
     }
     catch(std::exception& e)
