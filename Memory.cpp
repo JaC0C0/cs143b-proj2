@@ -1,17 +1,21 @@
 #include "Memory.h"
 
+//Constructor
 Memory::Memory()
 {
+    //Initialize Physical Memory Array
     for (int i = 0; i < *(&physicalMem[0]+1)-physicalMem[0]; i++)
     {
         this->physicalMem[0][i] = 0;
     }
+    //Initialize BitMap
     for (int j = 0; j<32; j++)
     {
         this->bitMap[j] = 0;
     }
 }
 
+//Read operation to the respective virtual address
 int Memory::readPhysical(int VA)
 {
     std::tuple<int, int, int> temp = this->convertVA(VA);
@@ -60,6 +64,7 @@ int Memory::readPhysical(int VA)
     }
 }
 
+//Write operation to the virtual address
 int Memory::writePhysical(int VA)
 {
     std::tuple<int, int, int> temp = this->convertVA(VA);
@@ -78,11 +83,13 @@ int Memory::writePhysical(int VA)
     }
     else
     {
+        //Create blank page
         if (physicalMem[0][s] == 0)
         {
             int freeFrame = -1;
             for (int i = 0; i < 32; i++)
             {
+                //If bitmap is not all 1's
                 if (bitMap[i] != 4294967295)
                 {
                     std::bitset<32> bitMapCell(bitMap[i]);
@@ -96,19 +103,20 @@ int Memory::writePhysical(int VA)
                     }
                 }
             }
+            //If loop cannot find a single open bit
             if (freeFrame == -1)
             {
                 std::cout << "Out of memory" << std::endl;
             }
             else
             {
+                //If toggleBitMap says bit is already occupied. Defensive programming
                 if (!this->toggleBitMap(freeFrame))
                 {
                     this->toggleBitMap(freeFrame);
                     std::cout << "Error: Memory already occupied" << std::endl;
                 }
             }
-
         }
         int pOffset = 0;
         int pageTableNum = physicalMem[0][s];
@@ -140,6 +148,7 @@ void Memory::setUseTLB(bool b)
     this->useTLB = b;
 }
 
+//Converts a 32-bit integer to a tuple representing Segment, Page, and Page offset
 std::tuple<int, int, int> Memory::convertVA(int VA)
 {
     std::bitset<32> bitAddress(VA);
@@ -162,6 +171,7 @@ std::tuple<int, int, int> Memory::convertVA(int VA)
 
 }
 
+//Returns the value of the bit at the respective BitMap[location]
 int Memory::getTraceBit(int b)
 {
     int index = b / 32;
@@ -170,6 +180,7 @@ int Memory::getTraceBit(int b)
     return bitMapCell[remainder];
 }
 
+//Toggles respective bit and returns boolean to inform of the type of change
 bool Memory::toggleBitMap(int b)
 {
     int index = b / 32;

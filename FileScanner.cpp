@@ -12,6 +12,7 @@ std::vector<std::tuple<int, int, int>> FileScanner::processCmd()
     std::vector<std::tuple<int, int, int>> initVector;
     try
     {
+        //Creates an initial tuple that will tell the simulation if TLB is on or not
         if (tlbInput == "y")
         {
             initVector.push_back(std::make_tuple(-4, NULL, NULL));
@@ -20,6 +21,7 @@ std::vector<std::tuple<int, int, int>> FileScanner::processCmd()
         {
             initVector.push_back(std::make_tuple(-5, NULL, NULL));
         }
+        //Defaults to "ON"
         else
         {
             std::cout << "Invalid command. Implementing TLB by default." << std::endl;
