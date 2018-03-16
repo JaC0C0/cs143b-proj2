@@ -6,6 +6,10 @@ Memory::Memory()
     {
         this->physicalMem[0][i] = 0;
     }
+    for (int j = 0; j<32; j++)
+    {
+        this->bitMap[j] = 0;
+    }
 }
 
 int Memory::readPhysical(int VA)
@@ -76,7 +80,35 @@ int Memory::writePhysical(int VA)
     {
         if (physicalMem[0][s] == 0)
         {
-            //find empty page, set physicalMem[0][s] to new location, proceed
+            int freeFrame = -1;
+            for (int i = 0; i < 32; i++)
+            {
+                if (bitMap[i] != 4294967295)
+                {
+                    std::bitset<32> bitMapCell(bitMap[i]);
+                    for (int j = 0; j < 32; j++)
+                    {
+                        if (bitMapCell[i] == 0)
+                        {
+                            freeFrame = i * 32 + j;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (freeFrame == -1)
+            {
+                std::cout << "Out of memory" << std::endl;
+            }
+            else
+            {
+                if (!this->toggleBitMap(freeFrame))
+                {
+                    this->toggleBitMap(freeFrame);
+                    std::cout << "Error: Memory already occupied" << std::endl;
+                }
+            }
+
         }
         int pOffset = 0;
         int pageTableNum = physicalMem[0][s];
@@ -128,4 +160,30 @@ std::tuple<int, int, int> Memory::convertVA(int VA)
 
     return std::make_tuple(int(s.to_ulong()), int(p.to_ulong()), int(w.to_ulong()));
 
+}
+
+int Memory::getTraceBit(int b)
+{
+    int index = b / 32;
+    int remainder = b % 32;
+    std::bitset<32> bitMapCell(this->bitMap[index]);
+    return bitMapCell[remainder];
+}
+
+bool Memory::toggleBitMap(int b)
+{
+    int index = b / 32;
+    int remainder = b % 32;
+    if (this->getTraceBit(b) == 0)
+    {
+        this->bitMap[index] += this->bitIdentityMap[remainder];
+        //Return True if respective frame is free
+        return true; 
+    }
+    else
+    {
+        this->bitMap[index] -= this->bitIdentityMap[remainder];
+        //Return False if respective frame is occupied
+        return false;
+    }
 }
