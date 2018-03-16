@@ -40,15 +40,15 @@ int main()
             virtualMemory.initialize(std::get<0>(cmd), std::get<1>(cmd), std::get<2>(cmd));
         }
     }
-
-    std::tuple<int, int, int> temp = virtualMemory.convertVA(1048576);
-    std::tuple<int, int, int> temp1 = virtualMemory.convertVA(1048586);
-    std::tuple<int, int, int> temp2 = virtualMemory.convertVA(1049088);
-
-    std::cout << std::get<0>(temp) << " " << std::get<1>(temp) << " " << std::get<2>(temp) << std::endl;
-    std::cout << std::get<0>(temp1) << " " << std::get<1>(temp1) << " " << std::get<2>(temp1) << std::endl;
-    std::cout << std::get<0>(temp2) << " " << std::get<1>(temp2) << " " << std::get<2>(temp2) << std::endl;
-    std::cout << "Holla" << std::endl;
+    // std::tuple<int, int, int> temp = virtualMemory.convertVA(0);
+    // std::tuple<int, int, int> temp0 = virtualMemory.convertVA(1048576);
+    // std::tuple<int, int, int> temp1 = virtualMemory.convertVA(1048586);
+    // std::tuple<int, int, int> temp2 = virtualMemory.convertVA(1049088);
+    // std::cout << std::get<0>(temp) << " " << std::get<1>(temp) << " " << std::get<2>(temp) << std::endl;
+    // std::cout << std::get<0>(temp0) << " " << std::get<1>(temp0) << " " << std::get<2>(temp0) << std::endl;
+    // std::cout << std::get<0>(temp1) << " " << std::get<1>(temp1) << " " << std::get<2>(temp1) << std::endl;
+    // std::cout << std::get<0>(temp2) << " " << std::get<1>(temp2) << " " << std::get<2>(temp2) << std::endl;
+    // std::cout << "Holla" << std::endl;
 
 
 

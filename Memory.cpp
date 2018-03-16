@@ -3,11 +3,11 @@
 //Constructor
 Memory::Memory()
 {
-    //Initialize Physical Memory Array
+    /*//Initialize Physical Memory Array
     for (int i = 0; i < *(&physicalMem[0]+1)-physicalMem[0]; i++)
     {
         this->physicalMem[0][i] = 0;
-    }
+    }*/
     //Initialize BitMap
     for (int j = 0; j<32; j++)
     {
@@ -23,15 +23,15 @@ Memory::Memory()
 //Initializes Memory with given inputs.
 void Memory::initialize(int s, int f)
 {
-    this->physicalMem[0][s] = f;
+    this->physicalMem[s] = f;
 }
 
 void Memory::initialize(int p, int s, int f)
 {
-    int index = 1 + (p / 512);
-    int remainder = p % 512;
-    this->physicalMem[0][s] = p;
-    this->physicalMem[index][remainder] = f;
+    // int index = 1 + (p / 512);
+    // int remainder = p % 512;
+    // this->physicalMem[s] = p;
+    this->physicalMem[this->physicalMem[s] + p] = f;
     this->toggleBitMap(s);
 }
 
@@ -47,31 +47,25 @@ int Memory::readPhysical(int VA)
         std::cout << "error, out of bounds" << std::endl;
         return -1;
     }
-    if (this->physicalMem[0][s] == -1)
+    if (this->physicalMem[s] == -1)
     {
         std::cout << "pf" << std::endl;
         return -1;
     }
-    else if (this->physicalMem[0][s] == 0)
+    else if (this->physicalMem[s] == 0)
     {
         std::cout << "err" << std::endl;
         return 0;
     }
     else
     {
-        int pOffset = 0;
-        int pageTableNum = this->physicalMem[0][s];
-        if (p > 511)
-        {
-            pageTableNum += 1;
-            p = p - 512;
-        }
-        if (physicalMem[pageTableNum][p] == -1)
+        int pageTableNum = this->physicalMem[s];
+        if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
             return -1;
         }
-        else if (physicalMem[pageTableNum][p] == 0)
+        else if (physicalMem[pageTableNum + p] == 0)
         {
             std::cout << "err" << std::endl;
             return 0;
@@ -79,7 +73,8 @@ int Memory::readPhysical(int VA)
         else
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
-            return physicalMem[pageTableNum + p][w];
+            std::cout << physicalMem[pageTableNum + p]+ w << std::endl; 
+            return physicalMem[pageTableNum + p]+ w;
         }
     }
 }
@@ -96,7 +91,7 @@ int Memory::writePhysical(int VA)
         std::cout << "error, out of bounds" << std::endl;
         return -1;
     }
-    else if (physicalMem[0][s] == -1)
+    else if (physicalMem[s] == -1)
     {
         std::cout << "pf" << std::endl;
         return -1;
@@ -104,7 +99,7 @@ int Memory::writePhysical(int VA)
     else
     {
         //Create blank page
-        if (physicalMem[0][s] == 0)
+        if (physicalMem[s] == 0)
         {
             int freeFrame = -1;
             for (int i = 0; i < 32; i++)
@@ -138,19 +133,13 @@ int Memory::writePhysical(int VA)
                 }
             }
         }
-        int pOffset = 0;
-        int pageTableNum = physicalMem[0][s];
-        if (p > 511)
-        {
-            pageTableNum += 1;
-            p = p - 512;
-        }
-        if (physicalMem[pageTableNum][p] == -1)
+        int pageTableNum = physicalMem[s];
+        if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
             return -1;
         }
-        else if (physicalMem[pageTableNum][p] == 0)
+        else if (physicalMem[pageTableNum + p] == 0)
         {
             std::cout << "err" << std::endl;
             return 0;
@@ -158,7 +147,8 @@ int Memory::writePhysical(int VA)
         else
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
-            return physicalMem[pageTableNum + p][w];
+            std::cout << physicalMem[pageTableNum + p]+ w << std::endl;
+            return physicalMem[pageTableNum + p] + w;
         }
     }
 }
@@ -173,7 +163,6 @@ std::tuple<int, int, int> Memory::convertVA(int VA)
 {
     std::bitset<32> bitAddress(VA);
     std::string virtualAddress = bitAddress.to_string();
-    std::cout << virtualAddress << std::endl;
     std::string tempS, tempP, tempW;
     for (int i = 4; i < 13; i++)
     {

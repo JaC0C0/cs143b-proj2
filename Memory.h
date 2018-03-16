@@ -24,7 +24,7 @@ public:
 private:
     std::vector<std::tuple<int, std::string, int>> TLB;
     bool useTLB = true;
-    int physicalMem[1024][512];
+    int physicalMem[524288] = {0};
     unsigned int bitMap[32];
     const unsigned int bitIdentityMap[32] = 
     { 
