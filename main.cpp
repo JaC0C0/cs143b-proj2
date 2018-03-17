@@ -2,16 +2,24 @@
 #include "Memory.h"
 #include "FileScanner.h"
 #include <bitset>
+#include <fstream>
 
 int main()
 {
     Memory virtualMemory;
     FileScanner filescan;
     std::vector<std::tuple<int, int, int>> cmdVector = filescan.processCmd();
+    std::ofstream outfile;
     if (std::get<0>(cmdVector[0]) == -5)
     {
         virtualMemory.setUseTLB(false);
+        outfile.open("32422520.txt");
     }
+    else
+    {
+        outfile.open("32422520_tlb.txt");
+    }
+
     cmdVector.erase(cmdVector.begin());
     for (auto cmd : cmdVector)
     {
@@ -21,9 +29,9 @@ int main()
         {
             switch (std::get<1>(cmd))
             {
-                case 0 : virtualMemory.readPhysical(std::get<2>(cmd));
+                case 0 : outfile << virtualMemory.readPhysical(std::get<2>(cmd)) << " ";
                 break;
-                case 1 : virtualMemory.writePhysical(std::get<2>(cmd));
+                case 1 : outfile << virtualMemory.writePhysical(std::get<2>(cmd)) << " ";
                 break;
             }
         }
@@ -40,6 +48,7 @@ int main()
             virtualMemory.initialize(std::get<0>(cmd), std::get<1>(cmd), std::get<2>(cmd));
         }
     }
+    outfile.close();
     // std::tuple<int, int, int> temp = virtualMemory.convertVA(0);
     // std::tuple<int, int, int> temp0 = virtualMemory.convertVA(1048576);
     // std::tuple<int, int, int> temp1 = virtualMemory.convertVA(1048586);

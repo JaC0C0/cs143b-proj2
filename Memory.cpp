@@ -36,7 +36,7 @@ void Memory::initialize(int p, int s, int f)
 }
 
 //Read operation to the respective virtual address
-int Memory::readPhysical(int VA)
+std::string Memory::readPhysical(int VA)
 {
     std::tuple<int, int, int> temp = this->convertVA(VA);
     int s = std::get<0>(temp);
@@ -45,17 +45,17 @@ int Memory::readPhysical(int VA)
     if (s > 511 || p > 1023 || w > 511)
     {
         std::cout << "error, out of bounds" << std::endl;
-        return -1;
+        return "err: out of bounds";
     }
     if (this->physicalMem[s] == -1)
     {
         std::cout << "pf" << std::endl;
-        return -1;
+        return "pf";
     }
     else if (this->physicalMem[s] == 0)
     {
         std::cout << "err" << std::endl;
-        return 0;
+        return "err";
     }
     else
     {
@@ -63,24 +63,24 @@ int Memory::readPhysical(int VA)
         if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
-            return -1;
+            return "pf";
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
             std::cout << "err" << std::endl;
-            return 0;
+            return "err";
         }
         else
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
             std::cout << physicalMem[pageTableNum + p]+ w << std::endl; 
-            return physicalMem[pageTableNum + p]+ w;
+            return std::to_string(physicalMem[pageTableNum + p]+ w);
         }
     }
 }
 
 //Write operation to the virtual address
-int Memory::writePhysical(int VA)
+std::string Memory::writePhysical(int VA)
 {
     std::tuple<int, int, int> temp = this->convertVA(VA);
     int s = std::get<0>(temp);
@@ -89,12 +89,12 @@ int Memory::writePhysical(int VA)
     if (s > 511 || p > 1023 || w > 511)
     {
         std::cout << "error, out of bounds" << std::endl;
-        return -1;
+        return "err: out of bounds";
     }
     else if (physicalMem[s] == -1)
     {
         std::cout << "pf" << std::endl;
-        return -1;
+        return "pf";
     }
     else
     {
@@ -137,18 +137,18 @@ int Memory::writePhysical(int VA)
         if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
-            return -1;
+            return "pf";
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
             std::cout << "err" << std::endl;
-            return 0;
+            return "err";
         }
         else
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
             std::cout << physicalMem[pageTableNum + p]+ w << std::endl;
-            return physicalMem[pageTableNum + p] + w;
+            return std::to_string(physicalMem[pageTableNum + p] + w);
         }
     }
 }
@@ -207,11 +207,20 @@ bool Memory::toggleBitMap(int b)
     }
 }
 
+
+static bool compareTLB(std::tuple<int, std::string, int> i, std::tuple<int, std::string, int> j)
+{
+    return std::get<0>(i) < std::get<0>(j);
+}
+
+//Returns Physical Address of VA if stored in TLB, if not, updates TLB with PA 
+//and returns "-2"
 int Memory::checkTLB(int VA)
 {
     std::tuple<int, int, int> temp = convertVA(VA);
     std::bitset<9> s(std::get<0>(temp));
     std::bitset<10> p(std::get<1>(temp));
+    std::bitset<9> w(std::get<2>(temp));
     std::string page = s.to_string() + p.to_string();
 
     for (int i = 0; i < this->TLB.size(); i++)
@@ -225,10 +234,37 @@ int Memory::checkTLB(int VA)
                     std::get<0>(this->TLB[j]) -= 1;
                 }
                 std::get<0>(this->TLB[i]) = 3;
-                //TODO: Sort Vector by rank again
-                return std::get<2>(this->TLB[i]);
+                std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
             }
+            return std::get<2>(this->TLB[i]) + w.to_ulong();
         }
     }
+    
     return -2;
+}
+
+void Memory::updateTLB(int VA, int PA)
+{
+    std::tuple<int, int, int> temp = convertVA(VA);
+    std::bitset<9> s(std::get<0>(temp));
+    std::bitset<10> p(std::get<1>(temp));
+    std::bitset<9> w(std::get<2>(temp));
+    std::string page = s.to_string() + p.to_string();
+    //Not found, TLB not full.
+    if (this->TLB.size() < 4)
+    {
+        int rank = this->TLB.size();
+        this->TLB.push_back(std::make_tuple(rank, page, PA));
+    }
+    //Not found, TLB full, remove first element in TLB.
+    else
+    {
+        this->TLB.erase(this->TLB.begin());
+        for (int i = 0; i < 4; i++)
+        {
+            std::get<0>(this->TLB[i]) -= 1;
+        }
+        this->TLB.push_back(std::make_tuple(3, page, PA));
+    }
+    std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
 }

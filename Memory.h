@@ -6,6 +6,7 @@
 #include <bitset>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include <string>
 
 class Memory
@@ -14,13 +15,15 @@ public:
     Memory();
     void initialize(int s, int f);
     void initialize(int p, int s, int f);
-    int readPhysical(int VA);
-    int writePhysical(int VA);
+    std::string readPhysical(int VA);
+    std::string writePhysical(int VA);
     void setUseTLB(bool b);
     std::tuple<int, int, int> convertVA(int VA);
     int getTraceBit(int b);
     bool toggleBitMap(int b);
     int checkTLB(int VA);
+    void updateTLB(int VA, int PA);
+    // static bool compareTLB(std::tuple<int, std::string, int> i, std::tuple<int, std::string, int> j);
 private:
     std::vector<std::tuple<int, std::string, int>> TLB;
     bool useTLB = true;
