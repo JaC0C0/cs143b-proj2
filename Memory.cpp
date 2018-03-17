@@ -54,19 +54,21 @@ std::string Memory::readPhysical(int VA)
         if (PA != -2)
         {
             this->updateTLB(VA, PA);
-            return "h " + std::to_string(this->physicalMem[PA]);
+            return "h " + std::to_string(PA);
         }
         textOutput += "m ";
     }
     if (this->physicalMem[s] == -1)
     {
-        std::cout << "pf" << std::endl;
-        return "pf";
+        std::cout << "pf: read -1" << std::endl;
+        textOutput += "pf";
+        return textOutput;
     }
     else if (this->physicalMem[s] == 0)
     {
-        std::cout << "err" << std::endl;
-        return "err";
+        std::cout << "err: read 0" << std::endl;
+        textOutput += "err";
+        return textOutput;
     }
     else
     {
@@ -74,12 +76,14 @@ std::string Memory::readPhysical(int VA)
         if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
-            return "pf";
+            textOutput += "pf";
+            return textOutput;
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
-            std::cout << "err" << std::endl;
-            return "err";
+            std::cout << "err: read page 0" << std::endl;
+            textOutput += "err";
+            return textOutput;
         }
         else
         {
@@ -106,7 +110,7 @@ std::string Memory::writePhysical(int VA)
         if (PA != -2)
         {
             this->updateTLB(VA, PA);
-            return "h " + std::to_string(this->physicalMem[PA]);
+            return "h " + std::to_string(PA);
         }
         textOutput += "m ";
     }
@@ -118,7 +122,8 @@ std::string Memory::writePhysical(int VA)
     else if (physicalMem[s] == -1)
     {
         std::cout << "pf" << std::endl;
-        return "pf";
+        textOutput += "pf";
+        return textOutput;
     }
     else
     {
@@ -153,8 +158,8 @@ std::string Memory::writePhysical(int VA)
                 if (!this->toggleBitMap(freeFrame))
                 {
                     this->toggleBitMap(freeFrame);
-                    std::cout << "Error: Memory already occupied" << std::endl;
-                    return "Err: Mem occupied";
+                    std::cout << "err: Memory already occupied" << std::endl;
+                    return "err: Mem occupied";
                 }
                 this->physicalMem[s] = freeFrame;
             }
@@ -163,12 +168,14 @@ std::string Memory::writePhysical(int VA)
         if (physicalMem[pageTableNum + p] == -1)
         {
             std::cout << "pf" << std::endl;
-            return "pf";
+            textOutput += "pf";
+            return textOutput;
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
-            std::cout << "err" << std::endl;
-            return "err";
+            std::cout << "err: write 0" << std::endl;
+            textOutput += "err";
+            return textOutput;
         }
         else
         {
