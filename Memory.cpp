@@ -38,6 +38,7 @@ void Memory::initialize(int p, int s, int f)
 //Read operation to the respective virtual address
 std::string Memory::readPhysical(int VA)
 {
+    std::string textOutput = "";
     std::tuple<int, int, int> temp = this->convertVA(VA);
     int s = std::get<0>(temp);
     int p = std::get<1>(temp);
@@ -46,6 +47,16 @@ std::string Memory::readPhysical(int VA)
     {
         std::cout << "error, out of bounds" << std::endl;
         return "err: out of bounds";
+    }
+    if (useTLB)
+    {
+        int PA = this->checkTLB(VA);
+        if (PA != -2)
+        {
+            this->updateTLB(VA, PA);
+            return "h " + std::to_string(this->physicalMem[PA]);
+        }
+        textOutput += "m ";
     }
     if (this->physicalMem[s] == -1)
     {
@@ -74,7 +85,9 @@ std::string Memory::readPhysical(int VA)
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
             std::cout << physicalMem[pageTableNum + p]+ w << std::endl; 
-            return std::to_string(physicalMem[pageTableNum + p]+ w);
+            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p] + w); }
+            textOutput += std::to_string(physicalMem[pageTableNum + p]+ w);
+            return textOutput;
         }
     }
 }
@@ -82,10 +95,21 @@ std::string Memory::readPhysical(int VA)
 //Write operation to the virtual address
 std::string Memory::writePhysical(int VA)
 {
+    std::string textOutput = "";
     std::tuple<int, int, int> temp = this->convertVA(VA);
     int s = std::get<0>(temp);
     int p = std::get<1>(temp);
     int w = std::get<2>(temp);
+    if (useTLB)
+    {
+        int PA = this->checkTLB(VA);
+        if (PA != -2)
+        {
+            this->updateTLB(VA, PA);
+            return "h " + std::to_string(this->physicalMem[PA]);
+        }
+        textOutput += "m ";
+    }
     if (s > 511 || p > 1023 || w > 511)
     {
         std::cout << "error, out of bounds" << std::endl;
@@ -130,7 +154,9 @@ std::string Memory::writePhysical(int VA)
                 {
                     this->toggleBitMap(freeFrame);
                     std::cout << "Error: Memory already occupied" << std::endl;
+                    return "Err: Mem occupied";
                 }
+                this->physicalMem[s] = freeFrame;
             }
         }
         int pageTableNum = physicalMem[s];
@@ -148,7 +174,9 @@ std::string Memory::writePhysical(int VA)
         {
             // int physicalAddress = physicalMem[pageTableNum + p][w];
             std::cout << physicalMem[pageTableNum + p]+ w << std::endl;
-            return std::to_string(physicalMem[pageTableNum + p] + w);
+            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p] + w); }
+            textOutput += std::to_string(physicalMem[pageTableNum + p] + w);
+            return textOutput;
         }
     }
 }
