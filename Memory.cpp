@@ -3,36 +3,32 @@
 //Constructor
 Memory::Memory()
 {
-    /*//Initialize Physical Memory Array
-    for (int i = 0; i < *(&physicalMem[0]+1)-physicalMem[0]; i++)
+    this->bitMap.reset();
+    this->bitMap.set(0);
+    for (int i = 0; i < 4; i++)
     {
-        this->physicalMem[0][i] = 0;
-    }*/
-    //Initialize BitMap
-    for (int j = 0; j<32; j++)
-    {
-        this->bitMap[j] = 0;
+        this->TLB.push_back(std::make_tuple(i, "", -1));
     }
-    //Initialize TLB
-    // for (int k = 0; k < 4; k++)
-    // {
-    //     this->TLB.push_back(std::make_tuple(-1, 0, 0))
-    // }
 }
 
 //Initializes Memory with given inputs.
 void Memory::initialize(int s, int f)
 {
     this->physicalMem[s] = f;
+    if (f > 0)
+    {
+        this->bitMap.set(f / 512);
+        this->bitMap.set((f / 512) + 1);
+    }
 }
 
 void Memory::initialize(int p, int s, int f)
 {
-    // int index = 1 + (p / 512);
-    // int remainder = p % 512;
-    // this->physicalMem[s] = p;
     this->physicalMem[this->physicalMem[s] + p] = f;
-    this->toggleBitMap(s);
+    if (f > 0)
+    {
+        this->bitMap.set(f / 512);
+    }
 }
 
 //Read operation to the respective virtual address
@@ -43,30 +39,23 @@ std::string Memory::readPhysical(int VA)
     int s = std::get<0>(temp);
     int p = std::get<1>(temp);
     int w = std::get<2>(temp);
-    if (s > 511 || p > 1023 || w > 511)
-    {
-        std::cout << "error, out of bounds" << std::endl;
-        return "err: out of bounds";
-    }
     if (useTLB)
     {
         int PA = this->checkTLB(VA);
         if (PA != -2)
         {
             this->updateTLB(VA, PA);
-            return "h " + std::to_string(PA);
+            return "h " + std::to_string(PA + w);
         }
         textOutput += "m ";
     }
     if (this->physicalMem[s] == -1)
     {
-        std::cout << "pf: read -1" << std::endl;
         textOutput += "pf";
         return textOutput;
     }
     else if (this->physicalMem[s] == 0)
     {
-        std::cout << "err: read 0" << std::endl;
         textOutput += "err";
         return textOutput;
     }
@@ -75,21 +64,17 @@ std::string Memory::readPhysical(int VA)
         int pageTableNum = this->physicalMem[s];
         if (physicalMem[pageTableNum + p] == -1)
         {
-            std::cout << "pf" << std::endl;
             textOutput += "pf";
             return textOutput;
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
-            std::cout << "err: read page 0" << std::endl;
             textOutput += "err";
             return textOutput;
         }
         else
         {
-            // int physicalAddress = physicalMem[pageTableNum + p][w];
-            std::cout << physicalMem[pageTableNum + p]+ w << std::endl; 
-            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p] + w); }
+            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p]); }
             textOutput += std::to_string(physicalMem[pageTableNum + p]+ w);
             return textOutput;
         }
@@ -109,19 +94,12 @@ std::string Memory::writePhysical(int VA)
         int PA = this->checkTLB(VA);
         if (PA != -2)
         {
-            this->updateTLB(VA, PA);
-            return "h " + std::to_string(PA);
+            return "h " + std::to_string(PA + w);
         }
         textOutput += "m ";
     }
-    if (s > 511 || p > 1023 || w > 511)
+    if (physicalMem[s] == -1)
     {
-        std::cout << "error, out of bounds" << std::endl;
-        return "err: out of bounds";
-    }
-    else if (physicalMem[s] == -1)
-    {
-        std::cout << "pf" << std::endl;
         textOutput += "pf";
         return textOutput;
     }
@@ -130,60 +108,28 @@ std::string Memory::writePhysical(int VA)
         //Create blank page
         if (physicalMem[s] == 0)
         {
-            int freeFrame = -1;
-            for (int i = 0; i < 32; i++)
-            {
-                //If bitmap is not all 1's
-                if (bitMap[i] != 4294967295)
-                {
-                    std::bitset<32> bitMapCell(bitMap[i]);
-                    for (int j = 0; j < 32; j++)
-                    {
-                        if (bitMapCell[i] == 0)
-                        {
-                            freeFrame = i * 32 + j;
-                            break;
-                        }
-                    }
-                }
-            }
-            //If loop cannot find a single open bit
-            if (freeFrame == -1)
-            {
-                std::cout << "Out of memory" << std::endl;
-            }
-            else
-            {
-                //If toggleBitMap says bit is already occupied. Defensive programming
-                if (!this->toggleBitMap(freeFrame))
-                {
-                    this->toggleBitMap(freeFrame);
-                    std::cout << "err: Memory already occupied" << std::endl;
-                    return "err: Mem occupied";
-                }
-                this->physicalMem[s] = freeFrame;
-            }
+            int freeFrame = this->findDoubleFreeFrame();
+            this->physicalMem[s] = freeFrame;
         }
         int pageTableNum = physicalMem[s];
         if (physicalMem[pageTableNum + p] == -1)
         {
-            std::cout << "pf" << std::endl;
             textOutput += "pf";
             return textOutput;
         }
         else if (physicalMem[pageTableNum + p] == 0)
         {
-            std::cout << "err: write 0" << std::endl;
-            textOutput += "err";
+            int freeFrame = findFreeFrame();
+            this->physicalMem[pageTableNum + p] = freeFrame;
+            textOutput += std::to_string(physicalMem[pageTableNum + p] + w);
+            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p]); }
             return textOutput;
         }
         else
         {
-            // int physicalAddress = physicalMem[pageTableNum + p][w];
-            std::cout << physicalMem[pageTableNum + p]+ w << std::endl;
-            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p] + w); }
+            if (useTLB) { this->updateTLB(VA, physicalMem[pageTableNum + p]); }
             textOutput += std::to_string(physicalMem[pageTableNum + p] + w);
-            return textOutput;
+            return textOutput; 
         }
     }
 }
@@ -209,39 +155,33 @@ std::tuple<int, int, int> Memory::convertVA(int VA)
     std::bitset<9> s(tempS);
     std::bitset<10> p(tempP);
     std::bitset<9> w(tempW);
-
     return std::make_tuple(int(s.to_ulong()), int(p.to_ulong()), int(w.to_ulong()));
 
 }
 
-//Returns the value of the bit at the respective BitMap[location]
-int Memory::getTraceBit(int b)
-{
-    int index = b / 32;
-    int remainder = b % 32;
-    std::bitset<32> bitMapCell(this->bitMap[index]);
-    return bitMapCell[remainder];
-}
-
 //Toggles respective bit and returns boolean to inform of the type of change
-bool Memory::toggleBitMap(int b)
+int Memory::findDoubleFreeFrame()
 {
-    int index = b / 32;
-    int remainder = b % 32;
-    if (this->getTraceBit(b) == 0)
+    for (int i = 0; i < 1023; i++)
     {
-        this->bitMap[index] += this->bitIdentityMap[remainder];
-        //Return True if respective frame is free
-        return true; 
+        if (bitMap.test(i) == false && bitMap.test(i + 1) == false)
+        {
+            bitMap.set(i);
+            bitMap.set(i + 1);
+            return i * 512;
+        }
     }
-    else
-    {
-        this->bitMap[index] -= this->bitIdentityMap[remainder];
-        //Return False if respective frame is occupied
-        return false;
-    }
+    return -1;
 }
 
+int Memory::findFreeFrame()
+{
+    for (int i = 0; i < 1024; i++)
+    {
+        if (bitMap.test(i) == false) { bitMap.set(i); return i * 512;}
+    }
+    return -1;
+}
 
 static bool compareTLB(std::tuple<int, std::string, int> i, std::tuple<int, std::string, int> j)
 {
@@ -257,21 +197,22 @@ int Memory::checkTLB(int VA)
     std::bitset<10> p(std::get<1>(temp));
     std::bitset<9> w(std::get<2>(temp));
     std::string page = s.to_string() + p.to_string();
-
-    for (int i = 0; i < this->TLB.size(); i++)
+    for (int i = 0; i < 4; i++)
     {
         if (std::get<1>(this->TLB[i]) == page)
         {
-            if (std::get<0>(this->TLB[i]) < 3)
+            int PA = std::get<2>(this->TLB[i]);
+            int rank = std::get<0>(this->TLB[i]);
+            for (int j = 0; j < 4; j++)
             {
-                for (int j = std::get<0>(this->TLB[i]); j < 3; j++)
+                if (std::get<0>(this->TLB[j]) > rank)
                 {
                     std::get<0>(this->TLB[j]) -= 1;
                 }
-                std::get<0>(this->TLB[i]) = 3;
-                std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
             }
-            return std::get<2>(this->TLB[i]) + w.to_ulong();
+            std::get<0>(this->TLB[i]) = 3;
+            std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
+            return PA;
         }
     }
     
@@ -285,21 +226,35 @@ void Memory::updateTLB(int VA, int PA)
     std::bitset<10> p(std::get<1>(temp));
     std::bitset<9> w(std::get<2>(temp));
     std::string page = s.to_string() + p.to_string();
-    //Not found, TLB not full.
-    if (this->TLB.size() < 4)
+    bool skip = false;
+    for (int g = 0; g < 4; g++)
     {
-        int rank = this->TLB.size();
-        this->TLB.push_back(std::make_tuple(rank, page, PA));
+        if (std::get<1>(this->TLB[g]) == page)
+        {
+            this->checkTLB(VA);
+            skip = true;
+        }
     }
-    //Not found, TLB full, remove first element in TLB.
-    else
+    if (!skip)
     {
         this->TLB.erase(this->TLB.begin());
-        for (int i = 0; i < 4; i++)
+        for (int h = 0; h < 4; h++)
+        {
+            if (std::get<0>(this->TLB[h]) == 0)
+            {
+                this->TLB.erase(this->TLB.begin() + h);
+            }
+        }
+        for (int i = 0; i < 3; i++)
         {
             std::get<0>(this->TLB[i]) -= 1;
         }
         this->TLB.push_back(std::make_tuple(3, page, PA));
+        std::string temp2 = "";
+        for (int i = 0; i<4; i++)
+        {
+            temp2 += std::get<1>(this->TLB[i]) + " : " + std::to_string(std::get<2>(this->TLB[i])) + " | ";
+        }
+        std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
     }
-    std::sort(this->TLB.begin(), this->TLB.end(), compareTLB);
 }
